@@ -2,15 +2,19 @@ from google.appengine.ext import webapp
 from google.appengine.api import xmpp
 from google.appengine.ext.webapp import util
 from google.appengine.ext.webapp import xmpp_handlers
+from google.appengine.ext.webapp.template import render
 from BeautifulSoup import BeautifulSoup
 import urllib
 import re
+from os import path
 
 HELP_MSG = "Welcome to automated LEO bot for RP \n====================\n Following features are supported - \n 1. /grades \n 2. /rj \n 3. /timetable \n 4. /ce \n 5. /gpa \n 6. /me \n More features to be implemented soon. Developed by *Kaung Htet Zaw* (emoosx@gmail.com)\n====================\nUSAGE EXAMPLE\n====================\n/grades 12345:password\n/timetable 12345:password"
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        self.response.out.write("Life is short, use python!")
+		tmpl = path.join(path.dirname(__file__), "index.html")
+		content = {}
+		self.response.out.write(render(tmpl, content))
 
 
 class XmppHandler(xmpp_handlers.CommandHandler):
