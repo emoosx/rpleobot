@@ -1,0 +1,10 @@
+This is my attempt to ease out repetitive LEO tasks targeting mainly at RP students. Add rpleobot@appspot.com on google talk to try it out. Currently support these features:
+
+1. /grades      to check out the recently published grades
+2. /rj          to check out RJ question of the day
+3. /timetable   to check out the timetable
+4. /ce          view CE points status
+5. /gpa         view cumulative GPA
+6. /me          view personal particulars
+
+Have fun!
