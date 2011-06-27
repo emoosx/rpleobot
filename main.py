@@ -8,7 +8,7 @@ import urllib
 import re
 from os import path
 
-HELP_MSG = "Welcome to automated LEO bot for RP \n====================\n Following features are supported - \n 1. /grades \n 2. /rj \n 3. /timetable \n 4. /ce \n 5. /gpa \n 6. /me \n More features to be implemented soon. Developed by *Kaung Htet Zaw* (emoosx@gmail.com)\n====================\nUSAGE EXAMPLE\n====================\n/grades 12345:password\n/timetable 12345:password"
+HELP_MSG = "Welcome to automated LEO bot for RP \n====================\n Following features are supported - \n 1. /grades \n 2. /rj (with submission status) \n 3. /timetable \n 4. /ce \n 5. /gpa \n 6. /me \n More features to be implemented soon. Developed by *Kaung Htet Zaw* (emoosx@gmail.com)\n====================\nUSAGE EXAMPLE\n====================\n/grades 12345:password\n/timetable 12345:password"
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
@@ -89,17 +89,18 @@ def getRJ(sid, password):
 	problem_list = re.findall("SELECTED> (.+)</OPTION>",html)
 	question = re.search("<font class=iContent>Question:(.*)</font><BR><br>", str(html), re.S)
 	if (len(problem_list) > 0 and question):
-		#response = re.search("<font class=iContent>Response: (.*) </font>", str(html), re.S)
-		#response = response.groups()[0]
+		response = re.search("<font class=iContent>Response: (.*) </font>", str(html), re.S)
+		response = response.groups()[0]
 		msg = "RJ Question - Problem > %s\n====================\n" % problem_list[0]
 		msg += question.groups()[0].strip()
-		#msg += "\n====================\nStatus :: "
-		#if response != "No Submission":
-		#	msg += "*Submitted*"
-		#else:
-		#	msg += "*Not Submitted Yet*"
+		msg += "\n====================\nStatus :: "
+		if response != "No Submission":
+			msg += "*Submitted*"
+		else:
+			msg += "*Not Submitted Yet*"
 		return msg
 	return "No Reflection Journal Assigned Yet!"
+
 
 def getGrades(sid, password):
 	site = "http://emoosx.me/leoapp/recentGrades.php?"
