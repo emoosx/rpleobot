@@ -101,17 +101,25 @@ def getRJ(sid, password):
 		return msg
 	return "No Reflection Journal Assigned Yet!"
 
-
 def getGrades(sid, password):
 	site = "http://emoosx.me/leoapp/recentGrades.php?"
 	site += urllib.urlencode({"sid": str(sid), "password":str(password)})
-	html = urllib.urlopen(site).read()
-	modules = re.findall("'_blank'>([A-Z][0-9][0-9][0-9])-", str(html))
-	problems = re.findall("Problem ([1-9]{1,2})", str(html))
-	grades = re.findall("\}' target='_blank'>([ABCDFX])<", str(html))
-	msg = 'Recent Grades\n====================\n'
+	html = str(urllib.urlopen(site).read())
+	modules = re.findall("'_blank'>([A-Z][0-9][0-9][0-9])-", html)
+	problems = re.findall("Problem ([1-9]{1,2})", html)
+	grades = re.findall("\}' target='_blank'>([ABCDFX])<", html)
+	utModules = re.findall("'_blank'>(.{4})-\d-.{4}-\w</a>.{301}UT", html)
+	utNo = re.findall("UT ([1-3])", html)
+	utGrades = re.findall("}&order=1' target='_blank'>(.{1,2})<", html)
+	msg = 'Recent Daily Grades\n====================\n'
 	for i in range(len(modules)):
 		msg += "%s > Problem-(%s)%3s\n" % (modules[i], problems[i], grades[i])
+	msg += "\n====================\nUT Grades\n====================\n"
+	if(len(utModules) > 0):		
+		for j in range(len(utModules)):
+			msg += "%s > UT-(%s)%3s\n" % (utModules[j], utNo[j], utGrades[j])
+	else:
+		msg += "No UT Grades Published Yet"
 	return msg.strip('\n')
 
 def getCE(sid, password):
