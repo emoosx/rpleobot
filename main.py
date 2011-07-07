@@ -8,7 +8,29 @@ import urllib
 import re
 from os import path
 
-HELP_MSG = "Welcome to automated LEO bot for RP \n====================\n Following features are supported - \n 1. /grades \n 2. /rj (with submission status) \n 3. /timetable \n 4. /ce \n 5. /gpa \n 6. /me \n More features to be implemented soon. Developed by *Kaung Htet Zaw* (emoosx@gmail.com)\n====================\nUSAGE EXAMPLE\n====================\n/grades 12345:password\n/timetable 12345:password"
+HELP_MSG = """Welcome to automatd LEO bot for RP
+====================
+Following features are supported -
+1. /grades (includes UT grades)
+2. /rj (includes submission status)
+3. /timetable
+4. /ce
+5. /gpa
+6. /me
+
+*Please notice that I do not store your credentials. The source code will be open-sourced soon*.
+
+If you enjoy using it, buy me a RedBull if you run into me in koufu :P
+====================
+Developed by _*Kaung Htet Zaw*_ . 
+====================
+Mail to emoosx@gmail.com for Bug reports & feature suggestions.
+
+USAGE EXAMPLE
+-------------
+/grades 91234:password
+/timetable 91234:password
+"""
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
@@ -65,6 +87,8 @@ class XmppHandler(xmpp_handlers.CommandHandler):
 		message.reply(getDetails(sid, password))
 
 
+		
+
 #helper methods to do respective actions
 def getTimetable(sid, password):
 	site = "http://emoosx.me/leoapp/timetable.php?"
@@ -106,7 +130,7 @@ def getGrades(sid, password):
 	site += urllib.urlencode({"sid": str(sid), "password":str(password)})
 	html = str(urllib.urlopen(site).read())
 	modules = re.findall("'_blank'>([A-Z][0-9][0-9][0-9])-", html)
-	problems = re.findall("Problem ([1-9]{1,2})", html)
+	problems = re.findall("Problem (\d{1,2})", html)
 	grades = re.findall("\}' target='_blank'>([ABCDFX])<", html)
 	utModules = re.findall("'_blank'>(.{4})-\d-.{4}-\w</a>.{301}UT", html)
 	utNo = re.findall("UT ([1-3])", html)
