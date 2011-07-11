@@ -132,7 +132,7 @@ def getGrades(sid, password):
 	modules = re.findall("'_blank'>([A-Z][0-9][0-9][0-9])-", html)
 	problems = re.findall("Problem (\d{1,2})", html)
 	grades = re.findall("\}' target='_blank'>([ABCDFX])<", html)
-	utModules = re.findall("'_blank'>(.{4})-\d-.{4}-\w</a>.{301}UT", html)
+	utModules = re.findall("'_blank'>(.{4})-\d-.{4}-\w</a>.{300,303}UT", html)
 	utNo = re.findall("UT ([1-3])", html)
 	utGrades = re.findall("}&order=1' target='_blank'>(.{1,2})<", html)
 	msg = 'Recent Daily Grades\n====================\n'
