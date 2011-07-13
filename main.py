@@ -161,8 +161,8 @@ def getGrades(sid, password):
 		if(len(utModules) > 0):		
 			for j in range(len(utModules)):
 				msg += "%s > UT-(%s)%3s\n" % (utModules[j], utNo[j], utGrades[j])
-			else:
-				msg += "No UT Grades Published Yet"
+		else:
+			msg += "No UT Grades Published Yet"
 		return msg.strip('\n')
 	
 def getCE(sid, password):
