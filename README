@@ -6,5 +6,6 @@ This is my attempt to ease out repetitive LEO tasks targeting mainly at RP stude
 4. /ce          view CE points status
 5. /gpa         view cumulative GPA
 6. /me          view personal particulars
+7. /gradesall	view all the module summaries of all problems
 
-For more info, visit http://rpleobot.appspot.com
+For API info, visit http://rpleobot.appspot.com
