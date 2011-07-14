@@ -17,7 +17,7 @@ Following features are supported -
 4. /ce
 5. /gpa
 6. /me
-4. /gradesall (beta)
+7. /gradesall (beta)
 
 *Please notice that I do not store your credentials. The source code will be open-sourced soon*.
 
