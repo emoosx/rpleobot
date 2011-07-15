@@ -35,7 +35,7 @@ USAGE EXAMPLE
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
-		tmpl = path.join(path.dirname(__file__), "api.html")
+		tmpl = path.join(path.dirname(__file__), "index.html")
 		content = {}
 		self.response.out.write(render(tmpl, content))
 
