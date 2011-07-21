@@ -3,7 +3,11 @@ from google.appengine.api import xmpp
 from google.appengine.ext.webapp import util
 from google.appengine.ext.webapp import xmpp_handlers
 from google.appengine.ext.webapp.template import render
+from google.appengine.api import urlfetch
 from BeautifulSoup import BeautifulSoup
+
+from django.utils import simplejson as json
+
 import urllib
 import re
 from os import path
@@ -19,7 +23,7 @@ Following features are supported -
 6. /me
 7. /gradesall (beta)
 
-*Please notice that I do not store your credentials. The source code will be open-sourced soon*.
+*Please notice that I do not store your credentials. Please check out the source code at https://github.com/emoosx/rpleobot*.
 
 If you enjoy using it, buy me a RedBull if you run into me in koufu :P
 ====================
@@ -92,6 +96,12 @@ class XmppHandler(xmpp_handlers.CommandHandler):
 		sid = str(message.arg[0:colon_index])
 		password = str(message.arg[colon_index+1:])
 		message.reply(getAllGrades(sid, password))
+		
+#	def grades2_command(self, message=None):
+#		colon_index = message.arg.index(":")
+#		sid = str(message.arg[0:colon_index])
+#		password = str(message.arg[colon_index+1:])
+#		message.reply(getGrades2(sid, password))
 
 
 		
@@ -118,52 +128,59 @@ def getTimetable(sid, password):
 
 
 def getRJ(sid, password):
-	site =  "http://emoosx.me/leoapp/rj.php?"
-	site += urllib.urlencode({"sid": str(sid), "password":str(password)})
-	html = urllib.urlopen(site).read()
+	RJ_API_URL = 'http://emoosx.me/regulus/api/dailyProblem/rjquestion?'
+	data = urllib.urlencode({"sid" : sid, "password" : password})
 	
-	if re.search("<TITLE> Fail to access LEO </TITLE>", html):
-		return "Wrong username/password combination"
+	RJ_API_URL += data
+	try:
+		rj_result = urlfetch.fetch(RJ_API_URL, method=urlfetch.GET, deadline=40)
+		rj_json = json.loads(rj_result.content)
+	except urlfetch.DownloadError:
+		rj_json = {"error" : "Server is taking too much time. Please try again!"}
+	
+	msg = ""
+	if not "error" in rj_json:
+		msg += "\n" + rj_json["problem_name"]
+		msg += "\n===================="
+		msg += "*Question* : %s" % rj_json["rj_question"]
 	else:
-		problem_list = re.findall("SELECTED> (.+)</OPTION>",html)
-		question = re.search("<font class=iContent>Question:(.*)</font><BR><br>", str(html), re.S)
-		if (len(problem_list) > 0 and question):
-			response = re.search("<font class=iContent>Response: (.*) </font>", str(html), re.S)
-			response = response.groups()[0]
-			msg = "RJ Question - Problem > %s\n====================\n" % problem_list[0]
-			msg += question.groups()[0].strip()
-			msg += "\n====================\nStatus :: "
-			if response != "No Submission":
-				msg += "*Submitted*"
-			else:
-				msg += "*Not Submitted Yet*"
-				return msg
-		return "No Reflection Journal Assigned Yet!"
+		msg = rj_json["error"]
+	return msg	
 
 def getGrades(sid, password):
-	site = "http://emoosx.me/leoapp/recentGrades.php?"
-	site += urllib.urlencode({"sid": str(sid), "password":str(password)})
-	html = str(urllib.urlopen(site).read())
+	GRADES_API_URL = "http://emoosx.me/regulus/api/grades/recentGrades?"
+	UT_API_URL = "http://emoosx.me/regulus/api/grades/recentUTGrades?"
 	
-	if re.search("<TITLE> Fail to access LEO </TITLE>", html):
-		return "Wrong username/password combination"
+	data = {"sid" : sid, "password" : password }
+	#data = urllib.urlencode(data)
+	
+	GRADES_API_URL += urllib.urlencode(data)
+	try:
+		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.GET,deadline=40)
+		grades_json = json.loads(grades_result.content)
+	except urlfetch.DownloadError:
+		grades_json = {"error" : "Server is taking too much time. Please try again!"}
+	
+	UT_API_URL += urllib.urlencode(data)
+	try:
+		ut_result = urlfetch.fetch(UT_API_URL, method=urlfetch.GET,deadline=40)
+		ut_json = json.loads(ut_result.content)
+	except urlfetch.DownloadError:
+		ut_json = {"error" : "Server is taking too much time. Please try again!"}
+	
+	msg = ""
+	if not "error" in grades_json:
+		msg = "\n*Recent Daily Grades* \n===================="
+		for p in grades_json:
+			msg += "\n%s > P(%s) %s " % (p["module_name"], p["problem"], p["grade"])
+	
+		msg += "\n\n====================\n*UT Grades* \n===================="
+		for ut in ut_json:
+			msg += "\n%s > UT-(%s) %s" % (ut["module_name"], ut["ut_no"], ut["ut_grade"])
 	else:
-		modules = re.findall("'_blank'>([A-Z][0-9][0-9][0-9])-", html)
-		problems = re.findall("Problem (\d{1,2})", html)
-		grades = re.findall("\}' target='_blank'>([ABCDFX])<", html)
-		utModules = re.findall("'_blank'>(.{4})-\d-.{4}-\w</a>.{300,303}UT", html)
-		utNo = re.findall("UT ([1-3])", html)
-		utGrades = re.findall("}&order=1' target='_blank'>(.{1,2})<", html)
-		msg = 'Recent Daily Grades\n====================\n'
-		for i in range(len(modules)):
-			msg += "%s > Problem-(%s)%3s\n" % (modules[i], problems[i], grades[i])
-		msg += "\n====================\nUT Grades\n====================\n"
-		if(len(utModules) > 0):		
-			for j in range(len(utModules)):
-				msg += "%s > UT-(%s)%3s\n" % (utModules[j], utNo[j], utGrades[j])
-		else:
-			msg += "No UT Grades Published Yet"
-		return msg.strip('\n')
+		msg = grades_json["error"]
+	return msg
+
 	
 def getCE(sid, password):
 	site = "http://emoosx.me/leoapp/academic.php?"
@@ -237,6 +254,28 @@ def main():
 	      ], debug=True)
     util.run_wsgi_app(application)
 
+#	def getRJ(sid, password):
+#		site =  "http://emoosx.me/leoapp/rj.php?"
+#		site += urllib.urlencode({"sid": str(sid), "password":str(password)})
+#		html = urllib.urlopen(site).read()
+#
+#		if re.search("<TITLE> Fail to access LEO </TITLE>", html):
+#			return "Wrong username/password combination"
+#		else:
+#			problem_list = re.findall("SELECTED> (.+)</OPTION>",html)
+#			question = re.search("<font class=iContent>Question:(.*)</font><BR><br>", str(html), re.S)
+#			if (len(problem_list) > 0 and question):
+#				response = re.search("<font class=iContent>Response: (.*) </font>", str(html), re.S)
+#				response = response.groups()[0]
+#				msg = "RJ Question - Problem > %s\n====================\n" % problem_list[0]
+#				msg += question.groups()[0].strip()
+#				msg += "\n====================\nStatus :: "
+#				if response != "No Submission":
+#					msg += "*Submitted*"
+#				else:
+#					msg += "*Not Submitted Yet*"
+#					return msg
+#			return "No Reflection Journal Assigned Yet!"
 
 if __name__ == '__main__':
     main()
