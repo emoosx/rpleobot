@@ -142,7 +142,7 @@ def getRJ(sid, password):
 	if not "error" in rj_json:
 		msg += "\n" + rj_json["problem_name"]
 		msg += "\n===================="
-		msg += "*Question* : %s" % rj_json["rj_question"]
+		msg += "\n *Question* : %s" % rj_json["rj_question"]
 	else:
 		msg = rj_json["error"]
 	return msg	
