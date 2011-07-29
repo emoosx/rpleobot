@@ -133,7 +133,7 @@ def getRJ(sid, password):
 	
 	RJ_API_URL += data
 	try:
-		rj_result = urlfetch.fetch(RJ_API_URL, method=urlfetch.GET, deadline=40)
+		rj_result = urlfetch.fetch(RJ_API_URL, method=urlfetch.GET, deadline=60)
 		rj_json = json.loads(rj_result.content)
 	except urlfetch.DownloadError:
 		rj_json = {"error" : "Server is taking too much time. Please try again!"}
@@ -156,7 +156,7 @@ def getGrades(sid, password):
 	
 	GRADES_API_URL += urllib.urlencode(data)
 	try:
-		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.GET,deadline=40)
+		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.GET,deadline=60)
 		grades_json = json.loads(grades_result.content)
 	except urlfetch.DownloadError:
 		grades_json = {"error" : "Server is taking too much time. Please try again!"}
