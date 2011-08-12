@@ -17,11 +17,12 @@ HELP_MSG = """Welcome to automatd LEO bot for RP
 Following features are supported -
 1. /grades (daily grades + UT grades)
 2. /rj (includes submission status)
-3. /timetable
-4. /ce
-5. /gpa
-6. /me
-7. /gradesall (beta)
+3. /class ( Class Timetable )
+4. /ut ( UT Timetable )
+5. /ce
+6. /gpa
+7. /me
+8. /gradesall (beta)
 
 *Please notice that I do not store your credentials. Please check out the source code at https://github.com/emoosx/rpleobot*.
 
@@ -34,7 +35,8 @@ Mail to emoosx@gmail.com for Bug reports & feature suggestions.
 USAGE EXAMPLE
 -------------
 /grades 91234:password
-/timetable 91234:password
+/class 91234:password
+/ut 91234:password
 """
 
 class MainHandler(webapp.RequestHandler):
@@ -58,11 +60,17 @@ class XmppHandler(xmpp_handlers.CommandHandler):
 		password = str(message.arg[colon_index+1:])
 		message.reply(getGrades(sid, password))
 
-	def timetable_command(self, message=None):
+	def class_command(self, message=None):
 		colon_index = message.arg.index(":")
 		sid = str(message.arg[0:colon_index])
 		password = str(message.arg[colon_index+1:])
-		message.reply(getTimetable(sid, password))
+		message.reply(getClassSchedule(sid, password))
+		
+	def ut_command(self, message=None):
+		colon_index = message.arg.index(":")
+		sid = str(message.arg[0:colon_index])
+		password = str(message.arg[colon_index+1:])
+		message.reply(getUTSchedule(sid,password))
 
 	def rj_command(self, message=None):
 		colon_index = message.arg.index(":")
@@ -98,26 +106,7 @@ class XmppHandler(xmpp_handlers.CommandHandler):
 		message.reply(getAllGrades(sid, password))
 	
 #helper methods to do respective actions
-def getTimetable(sid, password):
-	site = "http://emoosx.me/leoapp/timetable.php?"
-	site += urllib.urlencode({"sid" : str(sid), "password":str(password)})
-	html = str(urllib.urlopen(site).read())
-	if re.search("<TITLE> Fail to access LEO </TITLE>", html):
-		return "Wrong username/password combination"
-	else:
-		html = html.replace('<br>','\r\n')
-		strip = ['small', 'i', 'b', 'td']
-		for char in strip:
-			html = html.replace('<'+char+'>','').replace('</'+char+'>','')
-		soup = BeautifulSoup(html).contents[0].contents[1].findAll('tr')
-		msg = "TimeTable\n====================\n"
-		for i in range(2, len(soup)):
-			each = soup[i].renderContents()
-			result = re.sub('<.{0,22}>', "",each)
-			msg += result + "\n====================\n" 
-		return msg
-		
-def getTimetable(sid, password):
+def getClassSchedule(sid, password):
 	TIMETABLE_API_URL = 'http://emoosx.me/regulus/api/classroom/classSchedule'
 	data = urllib.urlencode({"sid" : sid, "password" : password})
 	
@@ -129,7 +118,7 @@ def getTimetable(sid, password):
 	
 	msg = ""
 	if not "error" in timetable_json:
-		msg += "\n Class Timetable"
+		msg += "\nClass Timetable"
 		msg += "\n===================="
 		for timetable in timetable_json:
 			msg += "\nModule : %s %s" % (timetable["module_code"],timetable["module_name"])
@@ -138,6 +127,29 @@ def getTimetable(sid, password):
 			msg += "\nDate : %s" % timetable["date"]
 			msg += "\nDay : %s" % timetable["day"]
 			msg += "\nTime : %s" % timetable["time"]
+			msg += "\n\n"
+	return msg
+
+def getUTSchedule(sid, password):
+	UT_API_URL = 'http://emoosx.me/regulus/api/classroom/utSchedule'
+	data = urllib.urlencode({'sid' : sid, "password" : password})
+	
+	try:
+		ut_result = urlfetch.fetch(UT_API_URL, payload=data, method=urlfetch.POST, deadline=60, headers={'Content-Type' : 'application/x-www-form-urlencoded'})
+		ut_json = json.loads(ut_result.content)
+	except urlfetch.DownloadError:
+		ut_json = {"error" : "Server is taking too much time. Please try again!"}
+	
+	msg = ""
+	if not "error" in ut_json:
+		msg += "\nUT Timetable"
+		msg += "\n===================="
+		for ut in ut_json:
+			msg += "\nUT Name : %s" % ut["ut_name"]
+			msg += "\nModule Name : %s" % ut['module_name']
+			msg += "\nVenue : %s" % ut['venue']
+			msg += "\nTime : %s" % ut['time']
+			msg += "\nDate : %s" % ut['date']
 			msg += "\n\n"
 	return msg
 	
