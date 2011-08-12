@@ -15,7 +15,7 @@ from os import path
 HELP_MSG = """Welcome to automatd LEO bot for RP
 ====================
 Following features are supported -
-1. /grades (includes UT grades)
+1. /grades (daily grades + UT grades)
 2. /rj (includes submission status)
 3. /timetable
 4. /ce
@@ -25,7 +25,7 @@ Following features are supported -
 
 *Please notice that I do not store your credentials. Please check out the source code at https://github.com/emoosx/rpleobot*.
 
-If you enjoy using it, buy me a RedBull if you run into me in koufu :P
+Spread the love if you enjoy using it.
 ====================
 Developed by _*Kaung Htet Zaw*_ . 
 ====================
@@ -96,16 +96,7 @@ class XmppHandler(xmpp_handlers.CommandHandler):
 		sid = str(message.arg[0:colon_index])
 		password = str(message.arg[colon_index+1:])
 		message.reply(getAllGrades(sid, password))
-		
-#	def grades2_command(self, message=None):
-#		colon_index = message.arg.index(":")
-#		sid = str(message.arg[0:colon_index])
-#		password = str(message.arg[colon_index+1:])
-#		message.reply(getGrades2(sid, password))
-
-
-		
-
+	
 #helper methods to do respective actions
 def getTimetable(sid, password):
 	site = "http://emoosx.me/leoapp/timetable.php?"
@@ -125,45 +116,66 @@ def getTimetable(sid, password):
 			result = re.sub('<.{0,22}>', "",each)
 			msg += result + "\n====================\n" 
 		return msg
-
-
-def getRJ(sid, password):
-	RJ_API_URL = 'http://emoosx.me/regulus/api/dailyProblem/rjquestion?'
+		
+def getTimetable(sid, password):
+	TIMETABLE_API_URL = 'http://emoosx.me/regulus/api/classroom/classSchedule'
 	data = urllib.urlencode({"sid" : sid, "password" : password})
 	
-	RJ_API_URL += data
 	try:
-		rj_result = urlfetch.fetch(RJ_API_URL, method=urlfetch.GET, deadline=60)
+		timetable_result = urlfetch.fetch(TIMETABLE_API_URL, payload=data, method=urlfetch.POST, deadline=60, headers={'Content-Type' : 'application/x-www-form-urlencoded'})
+		timetable_json = json.loads(timetable_result.content)
+	except urlfetch.DownloadError:
+		timetable_json = {"error" : "Server is taking too much time. Please try again!"}
+	
+	msg = ""
+	if not "error" in timetable_json:
+		msg += "\n Class Timetable"
+		msg += "\n===================="
+		for timetable in timetable_json:
+			msg += "\nModule : %s %s" % (timetable["module_code"],timetable["module_name"])
+			msg += "\nProblem No : %s" % timetable["problem_no"]
+			msg += "\nVenue : %s" % timetable["venue"]
+			msg += "\nDate : %s" % timetable["date"]
+			msg += "\nDay : %s" % timetable["day"]
+			msg += "\nTime : %s" % timetable["time"]
+			msg += "\n\n"
+	return msg
+	
+def getRJ(sid, password):
+	RJ_API_URL = 'http://emoosx.me/regulus/api/dailyProblem/rjquestion'
+	data = {"sid" : sid, "password" : password}
+	
+	try:
+		rj_result = urlfetch.fetch(RJ_API_URL,payload=urllib.urlencode(data),method=urlfetch.POST,deadline=60,headers={'Content-Type': 'application/x-www-form-urlencoded'})
 		rj_json = json.loads(rj_result.content)
 	except urlfetch.DownloadError:
 		rj_json = {"error" : "Server is taking too much time. Please try again!"}
-	
+		
 	msg = ""
 	if not "error" in rj_json:
 		msg += "\n" + rj_json["problem_name"]
 		msg += "\n===================="
-		msg += "\n *Question* : %s" % rj_json["rj_question"]
+		msg += "\n *Question* : %s" %rj_json["rj_question"]
+		msg += "\n===================="
+		msg += "\n *Status* : %s" %rj_json["status"]
 	else:
 		msg = rj_json["error"]
 	return msg	
 
+	
 def getGrades(sid, password):
-	GRADES_API_URL = "http://emoosx.me/regulus/api/grades/recentGrades?"
-	UT_API_URL = "http://emoosx.me/regulus/api/grades/recentUTGrades?"
+	GRADES_API_URL = "http://emoosx.me/regulus/api/grades/recentGrades"
+	UT_API_URL = "http://emoosx.me/regulus/api/grades/recentUTGrades"	
+	data = urllib.urlencode({"sid" : sid, "password" : password})
 	
-	data = {"sid" : sid, "password" : password }
-	#data = urllib.urlencode(data)
-	
-	GRADES_API_URL += urllib.urlencode(data)
 	try:
-		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.GET,deadline=60)
+		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.POST, deadline=60, payload=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
 		grades_json = json.loads(grades_result.content)
 	except urlfetch.DownloadError:
 		grades_json = {"error" : "Server is taking too much time. Please try again!"}
 	
-	UT_API_URL += urllib.urlencode(data)
 	try:
-		ut_result = urlfetch.fetch(UT_API_URL, method=urlfetch.GET,deadline=40)
+		ut_result = urlfetch.fetch(UT_API_URL, method=urlfetch.POST, deadline=60, payload=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
 		ut_json = json.loads(ut_result.content)
 	except urlfetch.DownloadError:
 		ut_json = {"error" : "Server is taking too much time. Please try again!"}
@@ -180,7 +192,6 @@ def getGrades(sid, password):
 	else:
 		msg = grades_json["error"]
 	return msg
-
 	
 def getCE(sid, password):
 	site = "http://emoosx.me/leoapp/academic.php?"
@@ -217,35 +228,30 @@ def getDetails(sid, password):
 	
 
 def getAllGrades(sid, password):
-	site = "http://emoosx.me/leoapp/recentGrades.php?"
-	site += urllib.urlencode({"sid": sid, "password": password})
-	html = urllib.urlopen(site).read()
+	MODULE_SUMMARY_API_URL = "http://emoosx.me/regulus/api/grades/allModuleSummary?"
+	data = {"sid" : sid, "password" : password}
 	
-	if re.search("<TITLE> Fail to access LEO </TITLE>", html):
-		return "Wrong username/password combination"
-	else:
-		modules = re.findall("'_blank'>([A-Z][0-9][0-9][0-9])-", html)
-		courseid = re.findall("projectweb\/student_summary.asp\?courseid=(.{38})", html, re.S)
-		msg = ""
-		for i,module in enumerate(modules):
-			msg += "\n\nModule Summary for %s" % module
-			msg += "\n====================\n"
-			msg += getAllGradesInAModule(sid, password, courseid[i])
-		return msg
+	MODULE_SUMMARY_API_URL += urllib.urlencode(data)
+	try:
+		summary_result = urlfetch.fetch(MODULE_SUMMARY_API_URL, method=urlfetch.GET,deadline=100)
+		summary_json = json.loads(summary_result.content)
+	except urlfetch.DownloadError:
+		summary_json = {"error" : "Server is taking too much time. Please try again!"}
 		
-def getAllGradesInAModule(sid, password, courseid):
-	site = "http://emoosx.me/leoapp/moduleSummary.php?"
-	site += urllib.urlencode({"sid" :sid, "password" : password, "courseid" :courseid})
-	html = urllib.urlopen(site).read()
-	problem_grades = re.findall("<b>([ABCDFX])</b>", html)
-	ut_grades = re.findall("<font class=iContent>(.{1,2})</font>", html)
 	msg = ""
-	for problem in range(len(problem_grades)):
-		msg += "\nProblem %d => %s" %(problem+1, problem_grades[problem])
-	msg += "\n--------------------"
-	for ut in range(len(ut_grades)):
-		msg += "\n UT %d => %s" %(ut+1, ut_grades[ut])
+	if not "error" in summary_json:
+		for module in summary_json:
+			msg += "\n" + module["module_code"] + " > " + module["module_name"]
+			msg += "\n====================\n"
+			for p in summary_json["daily_grades"]:
+				msg += "\n" + p
+	else:
+		msg = summary_json["error"]
 	return msg
+		
+		
+
+
 
 def main():
     application = webapp.WSGIApplication([
@@ -254,28 +260,6 @@ def main():
 	      ], debug=True)
     util.run_wsgi_app(application)
 
-#	def getRJ(sid, password):
-#		site =  "http://emoosx.me/leoapp/rj.php?"
-#		site += urllib.urlencode({"sid": str(sid), "password":str(password)})
-#		html = urllib.urlopen(site).read()
-#
-#		if re.search("<TITLE> Fail to access LEO </TITLE>", html):
-#			return "Wrong username/password combination"
-#		else:
-#			problem_list = re.findall("SELECTED> (.+)</OPTION>",html)
-#			question = re.search("<font class=iContent>Question:(.*)</font><BR><br>", str(html), re.S)
-#			if (len(problem_list) > 0 and question):
-#				response = re.search("<font class=iContent>Response: (.*) </font>", str(html), re.S)
-#				response = response.groups()[0]
-#				msg = "RJ Question - Problem > %s\n====================\n" % problem_list[0]
-#				msg += question.groups()[0].strip()
-#				msg += "\n====================\nStatus :: "
-#				if response != "No Submission":
-#					msg += "*Submitted*"
-#				else:
-#					msg += "*Not Submitted Yet*"
-#					return msg
-#			return "No Reflection Journal Assigned Yet!"
 
 if __name__ == '__main__':
     main()
