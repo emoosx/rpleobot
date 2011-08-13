@@ -24,7 +24,7 @@ Following features are supported -
 7. /me
 8. /gradesall (beta)
 
-*Please notice that I do not store your credentials. Please check out the source code at https://github.com/emoosx/rpleobot*.
+*Please notice that I do not store your credentials*. Please check out the source code at https://github.com/emoosx/rpleobot.
 
 Spread the love if you enjoy using it.
 ====================
