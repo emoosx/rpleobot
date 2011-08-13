@@ -4,7 +4,6 @@ from google.appengine.ext.webapp import util
 from google.appengine.ext.webapp import xmpp_handlers
 from google.appengine.ext.webapp.template import render
 from google.appengine.api import urlfetch
-from BeautifulSoup import BeautifulSoup
 
 from django.utils import simplejson as json
 
@@ -24,7 +23,7 @@ Following features are supported -
 7. /me
 8. /gradesall (beta)
 
-*Please notice that I do not store your credentials*. Please check out the source code at https://github.com/emoosx/rpleobot.
+*Please notice that I do not store your credentials*. Please check out the source code at https://github.com/emoosx/rpleobot
 
 Spread the love if you enjoy using it.
 ====================
@@ -107,7 +106,7 @@ class XmppHandler(xmpp_handlers.CommandHandler):
 	
 #helper methods to do respective actions
 def getClassSchedule(sid, password):
-	TIMETABLE_API_URL = 'http://emoosx.me/regulus/api/classroom/classSchedule'
+	TIMETABLE_API_URL = 'http://leoapp.definerp.com/index.php/api/classroom/classSchedule'
 	data = urllib.urlencode({"sid" : sid, "password" : password})
 	
 	try:
@@ -121,17 +120,17 @@ def getClassSchedule(sid, password):
 		msg += "\nClass Timetable"
 		msg += "\n===================="
 		for timetable in timetable_json:
-			msg += "\nModule : %s %s" % (timetable["module_code"],timetable["module_name"])
-			msg += "\nProblem No : %s" % timetable["problem_no"]
-			msg += "\nVenue : %s" % timetable["venue"]
-			msg += "\nDate : %s" % timetable["date"]
-			msg += "\nDay : %s" % timetable["day"]
-			msg += "\nTime : %s" % timetable["time"]
+			msg += "\nModule : %s %s" % (str(timetable["module_code"]), str(timetable["module_name"]))
+			msg += "\nProblem No : %s" % str(timetable["problem_no"])
+			msg += "\nVenue : %s" % str(timetable["venue"])
+			msg += "\nDate : %s" % str(timetable["date"])
+			msg += "\nDay : %s" % str(timetable["day"])
+			msg += "\nTime : %s" % str(timetable["time"])
 			msg += "\n\n"
 	return msg
 
 def getUTSchedule(sid, password):
-	UT_API_URL = 'http://emoosx.me/regulus/api/classroom/utSchedule'
+	UT_API_URL = 'http://leoapp.definerp.com/index.php/api/classroom/utSchedule'
 	data = urllib.urlencode({'sid' : sid, "password" : password})
 	
 	try:
@@ -145,11 +144,11 @@ def getUTSchedule(sid, password):
 		msg += "\nUT Timetable"
 		msg += "\n===================="
 		for ut in ut_json:
-			msg += "\nUT Name : %s" % ut["ut_name"]
-			msg += "\nModule Name : %s" % ut['module_name']
-			msg += "\nVenue : %s" % ut['venue']
-			msg += "\nTime : %s" % ut['time']
-			msg += "\nDate : %s" % ut['date']
+			msg += "\nUT Name : %s" % str(ut["ut_name"])
+			msg += "\nModule Name : %s" % str(ut['module_name'])
+			msg += "\nVenue : %s" % str(ut['venue'])
+			msg += "\nTime : %s" % str(ut['time'])
+			msg += "\nDate : %s" % str(ut['date'])
 			msg += "\n\n"
 	return msg
 	
@@ -165,29 +164,29 @@ def getRJ(sid, password):
 		
 	msg = ""
 	if not "error" in rj_json:
-		msg += "\n" + rj_json["problem_name"]
+		msg += "\n" + str(rj_json["problem_name"])
 		msg += "\n===================="
-		msg += "\n *Question* : %s" %rj_json["rj_question"]
+		msg += "\n *Question* : %s" % str(rj_json["rj_question"])
 		msg += "\n===================="
-		msg += "\n *Status* : %s" %rj_json["status"]
+		msg += "\n *Status* : %s" % str(rj_json["status"])
 	else:
 		msg = rj_json["error"]
 	return msg	
 
 	
 def getGrades(sid, password):
-	GRADES_API_URL = "http://emoosx.me/regulus/api/grades/recentGrades"
-	UT_API_URL = "http://emoosx.me/regulus/api/grades/recentUTGrades"	
+	GRADES_API_URL = "http://leoapp.definerp.com/index.php/api/grades/recentGrades"
+	UT_API_URL = "http://leoapp.definerp.com/index.php/api/grades/recentUTGrades"	
 	data = urllib.urlencode({"sid" : sid, "password" : password})
 	
 	try:
-		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.POST, deadline=60, payload=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+		grades_result = urlfetch.fetch(GRADES_API_URL, method=urlfetch.POST, deadline=40, payload=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
 		grades_json = json.loads(grades_result.content)
 	except urlfetch.DownloadError:
 		grades_json = {"error" : "Server is taking too much time. Please try again!"}
 	
 	try:
-		ut_result = urlfetch.fetch(UT_API_URL, method=urlfetch.POST, deadline=60, payload=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+		ut_result = urlfetch.fetch(UT_API_URL, method=urlfetch.POST, deadline=40, payload=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
 		ut_json = json.loads(ut_result.content)
 	except urlfetch.DownloadError:
 		ut_json = {"error" : "Server is taking too much time. Please try again!"}
